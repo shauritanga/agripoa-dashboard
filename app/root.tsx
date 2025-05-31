@@ -29,6 +29,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+          name="description"
+          content="Agripoa - Agricultural Platform for Tanzania. Empowering farmers and cooperatives across Tanzania."
+        />
+        <meta
+          name="keywords"
+          content="agriculture, Tanzania, farmers, cooperatives, Agripoa, farming, agricultural platform"
+        />
+        <meta name="author" content="Agripoa Tanzania" />
+        <meta
+          property="og:title"
+          content="Agripoa - Agricultural Platform for Tanzania"
+        />
+        <meta
+          property="og:description"
+          content="Empowering Tanzanian farmers and cooperatives through technology"
+        />
+        <meta property="og:type" content="website" />
         <Meta />
         <Links />
       </head>
