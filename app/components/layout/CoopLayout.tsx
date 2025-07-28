@@ -1,5 +1,7 @@
-import { Link, Outlet, useLocation } from "react-router";
-import { useState } from "react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { getCooperativeById, type Cooperative } from "../../lib/cooperatives";
 
 // Icons for the cooperative dashboard
 const DashboardIcon = () => (
@@ -176,7 +178,42 @@ const BellIcon = () => (
 
 export function CoopLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [cooperative, setCooperative] = useState<Cooperative | null>(null);
+  const { signOut: firebaseSignOut, userProfile } = useAuth();
+
+  // Fetch cooperative details when userProfile is available
+  useEffect(() => {
+    const fetchCooperative = async () => {
+      if (userProfile?.cooperativeId) {
+        try {
+          const coopData = await getCooperativeById(userProfile.cooperativeId);
+          setCooperative(coopData);
+        } catch (error) {
+          console.error("Error fetching cooperative:", error);
+        }
+      }
+    };
+
+    fetchCooperative();
+  }, [userProfile?.cooperativeId]);
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await firebaseSignOut();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if there's an error, redirect to login
+      navigate("/login", { replace: true });
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   const navigation = [
     {
@@ -259,7 +296,9 @@ export function CoopLayout() {
             {!sidebarCollapsed && (
               <div>
                 <h2 className="text-xl font-bold text-white">Agripoa</h2>
-                <p className="text-xs text-green-300">Uwamambo Farmers Co-op</p>
+                <p className="text-xs text-green-300">
+                  {cooperative?.name || "Cooperative Portal"}
+                </p>
               </div>
             )}
             <button
@@ -419,20 +458,45 @@ export function CoopLayout() {
 
           {/* Logout - Pinned to Bottom */}
           <div className="mt-auto pt-4 border-t border-green-700">
-            <Link
-              to="/"
-              className={`flex items-center ${
+            <button
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className={`w-full flex items-center ${
                 sidebarCollapsed
                   ? "justify-center px-2 py-3"
                   : "space-x-3 px-3 py-2.5"
-              } rounded-lg text-sm font-medium text-green-100 hover:text-white hover:bg-green-700 transition-colors`}
+              } rounded-lg text-sm font-medium text-green-100 hover:text-white hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
               title={sidebarCollapsed ? "Logout" : undefined}
             >
               <div className={sidebarCollapsed ? "w-6 h-6" : "w-5 h-5"}>
-                <LogoutIcon />
+                {isLoggingOut ? (
+                  <svg
+                    className="animate-spin w-full h-full"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                ) : (
+                  <LogoutIcon />
+                )}
               </div>
-              {!sidebarCollapsed && <span>Logout</span>}
-            </Link>
+              {!sidebarCollapsed && (
+                <span>{isLoggingOut ? "Signing out..." : "Logout"}</span>
+              )}
+            </button>
           </div>
         </nav>
       </aside>
@@ -446,7 +510,7 @@ export function CoopLayout() {
                 Cooperative Portal
               </h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Uwamambo Farmers Cooperative
+                {cooperative?.name || "Cooperative Portal"}
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -459,14 +523,18 @@ export function CoopLayout() {
               <div className="flex items-center space-x-3">
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    John Mwalimu
+                    {userProfile?.name || "Cooperative User"}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     Cooperative Manager
                   </p>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white font-medium">
-                  JM
+                  {userProfile?.name
+                    ?.split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase() || "CM"}
                 </div>
               </div>
             </div>

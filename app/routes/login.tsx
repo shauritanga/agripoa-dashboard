@@ -1,6 +1,8 @@
 import type { MetaFunction } from "react-router";
-import { useState } from "react";
-import { Link } from "react-router";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router";
+import { signIn, getErrorMessage } from "../lib/auth";
+import { useAuth } from "../contexts/AuthContext";
 
 export function meta({}: Parameters<MetaFunction>[0]) {
   return [
@@ -122,77 +124,50 @@ export default function Login() {
   const [userType, setUserType] = useState<"admin" | "cooperative">(
     "cooperative"
   );
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const { user, userProfile, loading } = useAuth();
 
-  // Sample user data for demonstration
-  const sampleUsers = {
-    admin: [
-      {
-        email: "admin@agripoa.co.tz",
-        password: "admin123",
-        name: "System Administrator",
-        role: "Super Admin",
-      },
-      {
-        email: "john@agripoa.co.tz",
-        password: "john123",
-        name: "John Mwalimu",
-        role: "Admin",
-      },
-    ],
-    cooperative: [
-      {
-        email: "manager@darfarmers.co.tz",
-        password: "manager123",
-        name: "Mary Mwanga",
-        cooperative: "Dar es Salaam Farmers Cooperative",
-      },
-      {
-        email: "john@darfarmers.co.tz",
-        password: "john123",
-        name: "John Mwalimu",
-        cooperative: "Dar es Salaam Farmers Cooperative",
-      },
-      {
-        email: "manager@kilicoffee.co.tz",
-        password: "manager123",
-        name: "Peter Mollel",
-        cooperative: "Kilimanjaro Coffee Cooperative",
-      },
-    ],
-  };
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!loading && user && userProfile) {
+      console.log(
+        "Login: User authenticated, redirecting to",
+        userProfile.role,
+        "dashboard"
+      );
+      const redirectPath =
+        userProfile.role === "admin" ? "/admin" : "/cooperative";
+      navigate(redirectPath, { replace: true });
+    }
+  }, [user, userProfile, loading, navigate]);
+
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-green-900 dark:to-blue-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">
+            Checking authentication...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
     try {
-      const users = sampleUsers[userType];
-      const user = users.find(
-        (u) => u.email === email && u.password === password
-      );
-
-      if (user) {
-        // Simulate successful login
-        if (userType === "admin") {
-          // Redirect to admin dashboard
-          window.location.href = "/admin";
-        } else {
-          // Redirect to cooperative dashboard
-          window.location.href = "/cooperative";
-        }
-      } else {
-        setError(
-          "Invalid email or password. Please check your credentials and try again."
-        );
-      }
-    } catch (err) {
-      setError("Login failed. Please try again.");
+      await signIn(email, password);
+      // The AuthContext will handle the redirect based on user profile
+    } catch (err: any) {
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -223,31 +198,49 @@ export default function Login() {
         {/* User Type Selection */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
+            <div
               onClick={() => setUserType("cooperative")}
-              className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all ${
+              className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all cursor-pointer select-none ${
                 userType === "cooperative"
                   ? "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
                   : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-600 dark:text-gray-400"
               }`}
+              role="button"
+              tabIndex={0}
+              style={{ pointerEvents: "auto" }}
             >
-              <CooperativeIcon />
-              <span className="text-sm font-medium mt-2">Cooperative</span>
-            </button>
+              <div style={{ pointerEvents: "none" }}>
+                <CooperativeIcon />
+              </div>
+              <span
+                className="text-sm font-medium mt-2"
+                style={{ pointerEvents: "none" }}
+              >
+                Cooperative
+              </span>
+            </div>
 
-            <button
-              type="button"
+            <div
               onClick={() => setUserType("admin")}
-              className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all ${
+              className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all cursor-pointer select-none ${
                 userType === "admin"
                   ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
                   : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-600 dark:text-gray-400"
               }`}
+              role="button"
+              tabIndex={0}
+              style={{ pointerEvents: "auto" }}
             >
-              <AdminIcon />
-              <span className="text-sm font-medium mt-2">Admin</span>
-            </button>
+              <div style={{ pointerEvents: "none" }}>
+                <AdminIcon />
+              </div>
+              <span
+                className="text-sm font-medium mt-2"
+                style={{ pointerEvents: "none" }}
+              >
+                Admin
+              </span>
+            </div>
           </div>
         </div>
 

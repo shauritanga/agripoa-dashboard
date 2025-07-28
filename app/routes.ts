@@ -18,8 +18,6 @@ export default [
     layout("./routes/admin/layout.tsx", [
       index("./routes/admin/index.tsx"),
       route("farmers", "./routes/admin/farmers.tsx"),
-      route("cooperatives", "./routes/admin/cooperatives.tsx"),
-      route("analytics", "./routes/admin/analytics.tsx"),
       route("users", "./routes/admin/users.tsx"),
       route("reports", "./routes/admin/reports.tsx"),
       route("payments", "./routes/admin/payments.tsx"),
